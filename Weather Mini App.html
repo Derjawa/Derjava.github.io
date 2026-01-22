@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Погода Mini App</title>
+    <script src="https://web.telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-color-bg: #ffffff;
+            --tg-color-text: #000000;
+            --tg-color-hint: #999999;
+            --tg-color-link: #0088cc;
+            --tg-color-bg-secondary: #f0f0f0;
+            --primary-color: #0088cc;
+            --danger-color: #ff3b30;
+            --success-color: #34c759;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--tg-color-bg);
+            color: var(--tg-color-text);
+            padding: 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--tg-color-bg-secondary);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--tg-color-hint);
+            font-size: 14px;
+        }
+
+        .search-section {
+            margin-bottom: 24px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--tg-color-bg-secondary);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--tg-color-bg);
+            color: var(--tg-color-text);
+        }
+
+        .search-input::placeholder {
+            color: var(--tg-color-hint);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0074b7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 136, 204, 0.2);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #ff453a;
+        }
+
+        .weather-card {
+            background-color: var(--tg-color-bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .weather-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .city-name {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .weather-icon {
+            font-size: 48px;
+        }
+
+        .temperature-main {
+            font-size: 48px;
+            font-weight: 300;
+            margin: 16px 0;
+            color: var(--primary-color);
+        }
+
+        .weather-description {
+            color: var(--tg-color-hint);
+            font-size: 14px;
+            text-transform: capitalize;
+            margin-bottom: 16px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .detail-item {
+            background-color: rgba(0, 136, 204, 0.08);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .detail-label {
+            color: var(--tg-color-hint);
+            font-size: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--tg-color-text);
+        }
+
+        .saved-cities {
+            margin-top: 24px;
+        }
+
+        .saved-cities h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--tg-color-text);
+        }
+
+        .city-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .city-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background-color: var(--tg-color-bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .city-item:hover {
+            background-color: rgba(0, 136, 204, 0.1);
+        }
+
+        .city-info {
+            flex: 1;
+        }
+
+        .city-item-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .city-item-temp {
+            color: var(--tg-color-hint);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .city-item-remove {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            transition: all 0.2s ease;
+        }
+
+        .city-item-remove:hover {
+            opacity: 0.7;
+        }
+
+        .error-message {
+            background-color: rgba(255, 59, 48, 0.1);
+            color: var(--danger-color);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--tg-color-hint);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0, 136, 204, 0.2);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--tg-color-hint);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .temperature-main {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⛅ Погода</h1>
+            <p>Мини-приложение для отслеживания погоды</p>
+        </div>
+
+        <div class="search-section">
+            <form class="search-form" id="searchForm">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="cityInput" 
+                    placeholder="Введите название города..."
+                    autocomplete="off"
+                >
+                <button type="submit" class="btn btn-primary">
+                    <span>🔍</span>
+                    <span>Найти</span>
+                </button>
+            </form>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </div>
+
+        <div id="weatherContent">
+            <div class="empty-state">
+                <div class="empty-state-icon">🌍</div>
+                <div class="empty-state-text">Введите название города, чтобы узнать погоду</div>
+            </div>
+        </div>
+
+        <div id="savedCitiesSection" class="saved-cities" style="display: none;">
+            <h3>📍 Сохранённые города</h3>
+            <div id="savedCitiesList" class="city-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Configuration
+        const CONFIG = {
+            WEATHER_API_KEY: '79d1ca96933b0328e1c7e3e7a26cb347', // OpenWeatherMap API (public demo key)
+            STORAGE_KEY: 'saved_cities',
+            CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
+        };
+
+        // State Management
+        let state = {
+            currentWeather: null,
+            savedCities: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)) || [],
+            loading: false,
+            weatherCache: {},
+        };
+
+        // Model - Data Management
+        class WeatherModel {
+            static async fetchWeather(city) {
+                const cacheKey = city.toLowerCase();
+                const cached = state.weatherCache[cacheKey];
+                
+                if (cached && Date.now() - cached.timestamp < CONFIG.CACHE_DURATION) {
+                    return cached.data;
+                }
+
+                const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&lang=ru&appid=${CONFIG.WEATHER_API_KEY}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Город не найден');
+                }
+
+                const data = await response.json();
+                
+                state.weatherCache[cacheKey] = {
+                    data,
+                    timestamp: Date.now(),
+                };
+
+                return data;
+            }
+
+            static saveCityToStorage(city) {
+                const cityLower = city.toLowerCase();
+                if (!state.savedCities.some(c => c.toLowerCase() === cityLower)) {
+                    state.savedCities.push(city);
+                    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(state.savedCities));
+                }
+            }
+
+            static removeCityFromStorage(city) {
+                state.savedCities = state.savedCities.filter(
+                    c => c.toLowerCase() !== city.toLowerCase()
+                );
+                localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(state.savedCities));
+            }
+
+            static getSavedCities() {
+                return state.savedCities;
+            }
+        }
+
+        // View - UI Management
+        class WeatherView {
+            static renderWeather(weatherData) {
+                const { name, main, weather, wind, clouds, sys } = weatherData;
+                const iconMap = this.getWeatherIcon(weather[0].main);
+                const sunrise = new Date(sys.sunrise * 1000).toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const sunset = new Date(sys.sunset * 1000).toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+
+                const html = `
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <div>
+                                <div class="city-name">${name}</div>
+                                <div class="weather-description">${weather[0].description}</div>
+                            </div>
+                            <div class="weather-icon">${iconMap}</div>
+                        </div>
+                        <div class="temperature-main">${Math.round(main.temp)}°C</div>
+                        <div class="weather-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Ощущается как</div>
+                                <div class="detail-value">${Math.round(main.feels_like)}°C</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Влажность</div>
+                                <div class="detail-value">${main.humidity}%</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Давление</div>
+                                <div class="detail-value">${main.pressure} мб</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Ветер</div>
+                                <div class="detail-value">${Math.round(wind.speed)} м/с</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Облачность</div>
+                                <div class="detail-value">${clouds.all}%</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Видимость</div>
+                                <div class="detail-value">${(weatherData.visibility / 1000).toFixed(1)} км</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Восход</div>
+                                <div class="detail-value">${sunrise}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Закат</div>
+                                <div class="detail-value">${sunset}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="Controller.saveCity('${name}')" style="width: 100%;">
+                                💾 Сохранить город
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('weatherContent').innerHTML = html;
+                state.currentWeather = weatherData;
+            }
+
+            static renderSavedCities(cities) {
+                if (cities.length === 0) {
+                    document.getElementById('savedCitiesSection').style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('savedCitiesSection').style.display = 'block';
+                let html = '';
+
+                cities.forEach(city => {
+                    const cached = state.weatherCache[city.toLowerCase()];
+                    const temp = cached ? Math.round(cached.data.main.temp) : '-';
+                    const icon = cached ? this.getWeatherIcon(cached.data.weather[0].main) : '❓';
+
+                    html += `
+                        <div class="city-item" onclick="Controller.searchCity('${city}')">
+                            <div class="city-info">
+                                <div class="city-item-name">${icon} ${city}</div>
+                                <div class="city-item-temp">${temp}°C</div>
+                            </div>
+                            <button class="city-item-remove" onclick="event.stopPropagation(); Controller.removeCity('${city}')">✕</button>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('savedCitiesList').innerHTML = html;
+            }
+
+            static showLoading() {
+                document.getElementById('weatherContent').innerHTML = `
+                    <div class="loading">
+                        <span class="spinner"></span>
+                        Загрузка...
+                    </div>
+                `;
+            }
+
+            static showError(message) {
+                const errorEl = document.getElementById('errorMessage');
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                setTimeout(() => {
+                    errorEl.style.display = 'none';
+                }, 5000);
+            }
+
+            static getWeatherIcon(weatherType) {
+                const icons = {
+                    'Clear': '☀️',
+                    'Clouds': '☁️',
+                    'Rain': '🌧️',
+                    'Drizzle': '🌦️',
+                    'Thunderstorm': '⛈️',
+                    'Snow': '❄️',
+                    'Mist': '🌫️',
+                    'Smoke': '💨',
+                    'Haze': '🌫️',
+                    'Dust': '🌪️',
+                    'Fog': '🌫️',
+                    'Sand': '🏜️',
+                    'Ash': '🌋',
+                    'Squall': '💨',
+                    'Tornado': '🌪️',
+                };
+                return icons[weatherType] || '🌤️';
+            }
+        }
+
+        // Controller - Logic Management
+        class Controller {
+            static async searchCity(city) {
+                if (!city.trim()) {
+                    WeatherView.showError('Введите название города');
+                    return;
+                }
+
+                state.loading = true;
+                WeatherView.showLoading();
+
+                try {
+                    const weatherData = await WeatherModel.fetchWeather(city);
+                    WeatherView.renderWeather(weatherData);
+                    WeatherModel.saveCityToStorage(weatherData.name);
+                    this.updateSavedCities();
+                    document.getElementById('cityInput').value = '';
+                } catch (error) {
+                    WeatherView.showError(error.message);
+                    document.getElementById('weatherContent').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">😕</div>
+                            <div class="empty-state-text">Не удалось найти информацию о погоде. Попробуйте ещё раз.</div>
+                        </div>
+                    `;
+                } finally {
+                    state.loading = false;
+                }
+            }
+
+            static saveCity(city) {
+                WeatherModel.saveCityToStorage(city);
+                this.updateSavedCities();
+                WeatherView.showError(`${city} добавлен в избранное ✓`);
+            }
+
+            static removeCity(city) {
+                WeatherModel.removeCityFromStorage(city);
+                this.updateSavedCities();
+            }
+
+            static updateSavedCities() {
+                const cities = WeatherModel.getSavedCities();
+                WeatherView.renderSavedCities(cities);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const city = document.getElementById('cityInput').value;
+            Controller.searchCity(city);
+        });
+
+        // Initialize
+        Controller.updateSavedCities();
+
+        // Apply Telegram theme colors if available
+        if (tg.colorScheme === 'dark') {
+            document.documentElement.style.setProperty('--tg-color-bg', '#1c1c1e');
+            document.documentElement.style.setProperty('--tg-color-text', '#ffffff');
+            document.documentElement.style.setProperty('--tg-color-bg-secondary', '#2c2c2e');
+            document.documentElement.style.setProperty('--tg-color-hint', '#999999');
+        }
+    </script>
+</body>
+</html>
